@@ -47,7 +47,7 @@
 
 ## Overview  
 
-**Realtime-ASL** is a sophisticated computer vision system designed to translate **American Sign Language (ASL)** gestures into **text and speech** in real time. It leverages **deep learning**, **hand landmark detection**, and **CNN-based classification** to facilitate seamless communication between deaf/hard-of-hearing individuals and the hearing community.
+**Realtime-ASL** is a computer vision system designed to translate **American Sign Language (ASL)** gestures into **text and speech** in real time. It leverages **deep learning**, **hand landmark detection**, and **CNN-based classification** to facilitate seamless communication between deaf/hard-of-hearing individuals and the hearing community.
 
 The system processes hand gestures via webcam, identifies ASL letters, assembles them into words, and produces text and speech outputs through an intuitive and modern interface.
 
@@ -282,7 +282,7 @@ Contributions are welcome via pull requests and issue reports.
 
 ## License  
 
-This project is open source. Refer to the included **LICENSE** file for details.  
+This project is open source. 
 
 ---
 
@@ -300,7 +300,8 @@ This project is open source. Refer to the included **LICENSE** file for details.
 
 For inquiries or issues:  
 - Open a GitHub issue  
-- Review project documentation  
+- Review project documentation
+- Contact me if the aforementioned did not help
 
 ---
 
@@ -318,7 +319,3 @@ For inquiries or issues:
 - Context-aware sign interpretation  
 - Advanced accessibility integration  
 
----
-
-**Realtime-ASL** — Empowering communication through intelligent vision and inclusive technology.  
->>>>>>> 8ca2c64 (initializing)
