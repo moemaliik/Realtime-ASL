@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Language Recognition System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: white;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .camera-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .camera-section h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        .camera-container {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        #videoElement {
+            width: 100%;
+            height: 500px;
+            object-fit: cover;
+            border-radius: 15px;
+        }
+
+        .controls-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .recognition-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .recognition-panel h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        .skeleton-display {
+            width: 100%;
+            height: 300px;
+            border-radius: 15px;
+            background: #f7fafc;
+            border: 2px dashed #cbd5e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        #skeletonImage {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .character-display {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .character-label {
+            color: #718096;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .character-value {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #e53e3e;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #fef5e7, #fed7d7);
+            border-radius: 15px;
+            border: 2px solid #fed7d7;
+        }
+
+
+        .sentence-display {
+            margin-bottom: 20px;
+        }
+
+        .sentence-label {
+            color: #718096;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .sentence-value {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+            padding: 15px;
+            min-height: 80px;
+            font-size: 1.2rem;
+            color: #2d3748;
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+
+        .suggestions-section {
+            margin-bottom: 20px;
+        }
+
+        .suggestions-label {
+            color: #718096;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .suggestions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .suggestion-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            min-height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .suggestion-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .suggestion-btn:active {
+            transform: translateY(0);
+        }
+
+        .control-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .control-btn {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .control-btn.clear {
+            background: linear-gradient(135deg, #ed8936, #dd6b20);
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .control-btn:active {
+            transform: translateY(0);
+        }
+
+        .status-bar {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px 25px;
+            text-align: center;
+            color: white;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #48bb78;
+            margin-right: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #718096;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .suggestions-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .control-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Sign Language Recognition System</h1>
+            <p>Real-time American Sign Language to Text and Speech Conversion</p>
+            <p style="font-size: 0.9rem; margin-top: 10px; opacity: 0.8;">
+                Make a sign → See the character → Make "next" gesture to add it to your sentence<br>
+                <small style="font-size: 0.8rem;">Next gesture requires 1s delay between inputs. Backspace has 0.5s delay.</small>
+            </p>
+        </div>
+
+        <div class="main-content">
+            <div class="camera-section">
+                <h2>Live Camera Feed</h2>
+                <div class="camera-container">
+                    <video id="videoElement" autoplay muted></video>
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <div class="recognition-panel">
+                    <h2>Hand Recognition</h2>
+                    <div class="skeleton-display">
+                        <img id="skeletonImage" style="display: none;" alt="Hand Skeleton">
+                        <div class="loading" id="skeletonLoading">Hand skeleton will appear here</div>
+                    </div>
+
+                    <div class="character-display">
+                        <div class="character-label">Current Character</div>
+                        <div class="character-value" id="characterDisplay">-</div>
+                    </div>
+
+                    <div class="sentence-display">
+                        <div class="sentence-label">Current Sentence</div>
+                        <div class="sentence-value" id="sentenceDisplay">Start making signs to build your sentence...</div>
+                    </div>
+
+                    <div class="suggestions-section">
+                        <div class="suggestions-label">Word Suggestions</div>
+                        <div class="suggestions-grid">
+                            <button class="suggestion-btn" id="suggestion1" onclick="useSuggestion(0)"></button>
+                            <button class="suggestion-btn" id="suggestion2" onclick="useSuggestion(1)"></button>
+                            <button class="suggestion-btn" id="suggestion3" onclick="useSuggestion(2)"></button>
+                            <button class="suggestion-btn" id="suggestion4" onclick="useSuggestion(3)"></button>
+                        </div>
+                    </div>
+
+                    <div class="control-buttons">
+                        <button class="control-btn" onclick="speakText()">Speak</button>
+                        <button class="control-btn clear" onclick="clearText()">Clear</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <span class="status-indicator"></span>
+            <span id="statusText">Connecting to recognition system...</span>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+        let video;
+        let canvas;
+        let ctx;
+        let isProcessing = false;
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCamera();
+            initializeSocket();
+        });
+
+        function initializeCamera() {
+            video = document.getElementById('videoElement');
+            canvas = document.createElement('canvas');
+            ctx = canvas.getContext('2d');
+
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(stream) {
+                    video.srcObject = stream;
+                    video.play();
+                    updateStatus('Camera connected. Start making signs!');
+                })
+                .catch(function(err) {
+                    console.error('Error accessing camera:', err);
+                    updateStatus('Error: Could not access camera');
+                });
+        }
+
+        function initializeSocket() {
+            socket = io();
+            
+            socket.on('connect', function() {
+                updateStatus('Connected to recognition system');
+                startFrameCapture();
+            });
+
+            socket.on('disconnect', function() {
+                updateStatus('Disconnected from recognition system');
+            });
+
+            socket.on('recognition_result', function(data) {
+                updateDisplay(data);
+            });
+
+            socket.on('error', function(data) {
+                console.error('Server error:', data.message);
+                updateStatus('Error: ' + data.message);
+            });
+
+            socket.on('speak_status', function(data) {
+                updateStatus(data.message);
+            });
+
+            socket.on('clear_result', function(data) {
+                document.getElementById('sentenceDisplay').textContent = data.sentence || 'Start making signs to build your sentence...';
+            });
+
+            socket.on('suggestion_applied', function(data) {
+                document.getElementById('sentenceDisplay').textContent = data.sentence;
+            });
+        }
+
+        function startFrameCapture() {
+            setInterval(function() {
+                if (!isProcessing && video.readyState === video.HAVE_ENOUGH_DATA) {
+                    isProcessing = true;
+                    captureFrame();
+                }
+            }, 150); // Capture every 150ms to reduce MediaPipe load
+        }
+
+        function captureFrame() {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+            
+            socket.emit('process_frame', { image: imageData });
+            
+            setTimeout(() => {
+                isProcessing = false;
+            }, 100); // Increased delay to reduce MediaPipe load
+        }
+
+        function updateDisplay(data) {
+            // Update character display
+            const charDisplay = document.getElementById('characterDisplay');
+            charDisplay.textContent = data.character || '-';
+            
+            // Add visual feedback for character recognition
+            charDisplay.style.transform = 'scale(1.1)';
+            charDisplay.style.transition = 'transform 0.2s ease';
+            setTimeout(() => {
+                charDisplay.style.transform = 'scale(1)';
+            }, 200);
+            
+            // Update sentence display with animation
+            const sentenceDisplay = document.getElementById('sentenceDisplay');
+            const oldText = sentenceDisplay.textContent;
+            const newText = data.sentence || 'Start making signs to build your sentence...';
+            
+            if (oldText !== newText) {
+                sentenceDisplay.style.backgroundColor = '#e6fffa';
+                sentenceDisplay.style.transition = 'background-color 0.3s ease';
+                setTimeout(() => {
+                    sentenceDisplay.style.backgroundColor = '#f7fafc';
+                }, 500);
+            }
+            
+            sentenceDisplay.textContent = newText;
+            
+            // Update skeleton image
+            const skeletonImg = document.getElementById('skeletonImage');
+            const skeletonLoading = document.getElementById('skeletonLoading');
+            
+            if (data.skeleton) {
+                skeletonImg.src = data.skeleton;
+                skeletonImg.style.display = 'block';
+                skeletonLoading.style.display = 'none';
+            }
+            
+            // Update suggestions
+            const suggestions = data.suggestions || ['', '', '', ''];
+            for (let i = 0; i < 4; i++) {
+                const btn = document.getElementById(`suggestion${i + 1}`);
+                btn.textContent = suggestions[i] || '';
+                btn.style.display = suggestions[i] ? 'flex' : 'none';
+            }
+        }
+
+        function speakText() {
+            socket.emit('speak_text');
+        }
+
+        function clearText() {
+            socket.emit('clear_text');
+        }
+
+        function useSuggestion(index) {
+            const btn = document.getElementById(`suggestion${index + 1}`);
+            const suggestion = btn.textContent;
+            if (suggestion) {
+                socket.emit('use_suggestion', { suggestion: suggestion });
+            }
+        }
+
+        function updateStatus(message) {
+            document.getElementById('statusText').textContent = message;
+        }
+    </script>
+</body>
+</html>
