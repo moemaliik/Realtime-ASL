@@ -1,6 +1,3 @@
-# Realtime-ASL
- A Real-Time Sign Language Recognition System
-=======
 # Realtime-ASL  
 *A Real-Time Sign Language Recognition System*  
 **Author:** Mwafag Malik Omer Ahmed  
